@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app import _resolve_report_path, _write_json_report
+from app import _resolve_artifact_path, _resolve_report_path, _write_json_report
 
 
 def test_write_json_report_creates_parent_directory(tmp_path) -> None:
@@ -29,3 +29,11 @@ def test_resolve_report_path_uses_artifacts_dir_default_name() -> None:
 
 def test_resolve_report_path_returns_none_without_report_destination() -> None:
     assert _resolve_report_path(None, None, "analysis.json") is None
+
+
+def test_resolve_artifact_path_uses_artifacts_dir_default_name() -> None:
+    assert _resolve_artifact_path("artifacts", "twist_cutter.stl") == Path("artifacts") / "twist_cutter.stl"
+
+
+def test_resolve_artifact_path_returns_none_without_artifacts_dir() -> None:
+    assert _resolve_artifact_path(None, "twist_cutter.stl") is None

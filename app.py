@@ -72,12 +72,14 @@ def twist_command(
         )
         recommendation = _force_twist_recommendation(report, plugins)
 
+    cutter_output_path = _resolve_artifact_path(artifacts_dir, "twist_cutter.stl") if keep_cutter else None
     result = apply_scored_twist_operation(
         input_path=model_path,
         output_path=output_model_path,
         recommendation=recommendation,
         blender_path=blender_path,
         keep_cutter=keep_cutter,
+        cutter_output_path=cutter_output_path,
     )
 
     payload = {
@@ -98,6 +100,10 @@ def twist_command(
 def _resolve_report_path(report_path: str | None, artifacts_dir: str | None, default_name: str) -> Path | None:
     if report_path:
         return Path(report_path)
+    return _resolve_artifact_path(artifacts_dir, default_name)
+
+
+def _resolve_artifact_path(artifacts_dir: str | None, default_name: str) -> Path | None:
     if artifacts_dir:
         return Path(artifacts_dir) / default_name
     return None
@@ -193,7 +199,7 @@ def build_parser() -> argparse.ArgumentParser:
     twist_parser.add_argument("input", help="Input STL, OBJ, or 3MF path")
     twist_parser.add_argument("output", help="Output STL path")
     twist_parser.add_argument("--blender", default=None, help="Optional explicit Blender executable path")
-    twist_parser.add_argument("--keep-cutter", action="store_true", help="Keep generated cutter STL beside output")
+    twist_parser.add_argument("--keep-cutter", action="store_true", help="Keep generated cutter STL beside output or in --artifacts-dir")
     twist_parser.add_argument("--report", default=None, help="Optional path to write the JSON operation report")
     twist_parser.add_argument("--artifacts-dir", default=None, help="Optional directory for default Twist artifacts")
     twist_parser.add_argument(

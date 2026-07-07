@@ -61,6 +61,18 @@ Write the JSON analysis report to disk:
 python app.py analyze path/to/model.stl --report reports/analysis.json
 ```
 
+Use default artifact names:
+
+```bash
+python app.py analyze path/to/model.stl --artifacts-dir artifacts
+```
+
+This writes:
+
+```text
+artifacts/analysis.json
+```
+
 For a 3MF test file, copy it into the repo and run:
 
 ```bash
@@ -79,6 +91,19 @@ Write the full operation report to disk:
 
 ```bash
 python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --report reports/twist_operation.json
+```
+
+Use default artifact names for both the operation report and cutter preview:
+
+```bash
+python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --artifacts-dir artifacts
+```
+
+This writes:
+
+```text
+artifacts/twist_operation.json
+artifacts/twist_cutter.stl
 ```
 
 For 3MF inputs, FlexAI keeps the original input path in reports and creates a temporary STL only for Blender execution:
@@ -110,8 +135,8 @@ python app.py twist path/to/model.stl path/to/output.stl --strict-recommendation
 ## Suggested smoke run
 
 ```bash
-python app.py analyze path/to/model.stl --report reports/analysis.json
-python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --report reports/twist_operation.json
+python app.py analyze path/to/model.stl --artifacts-dir artifacts
+python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --artifacts-dir artifacts
 ```
 
 Inspect the generated STL and JSON artifacts before using the output for printing.
