@@ -26,6 +26,8 @@ def test_apply_twist_v2_delegates_to_primary_twist_command(monkeypatch) -> None:
             "blender-test",
             "--keep-cutter",
             "--strict-recommendation",
+            "--report",
+            "reports/operation.json",
         ],
     )
 
@@ -36,4 +38,5 @@ def test_apply_twist_v2_delegates_to_primary_twist_command(monkeypatch) -> None:
         "blender_path": "blender-test",
         "keep_cutter": True,
         "strict_recommendation": True,
+        "report_path": "reports/operation.json",
     }
