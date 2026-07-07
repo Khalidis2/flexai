@@ -5,8 +5,12 @@ from __future__ import annotations
 import pytest
 
 from flexai.cutters.twist_generator import (
+    MAX_BLADE_COUNT,
+    MAX_TURNS,
+    MIN_BLADE_COUNT,
     MIN_PRINTABLE_SLOT_WIDTH_MM,
     MIN_SEGMENTS,
+    MIN_TURNS,
     TwistCutterParameters,
     generate_twist_cutter,
     normalize_twist_parameters,
@@ -54,12 +58,30 @@ def test_twist_parameters_reject_unprintable_slot_width() -> None:
         params.validate()
 
 
+def test_twist_parameters_reject_turns_outside_bounds() -> None:
+    with pytest.raises(ValueError, match="turns"):
+        TwistCutterParameters(diameter_mm=20.0, height_mm=20.0, turns=0.0).validate()
+
+    with pytest.raises(ValueError, match="turns"):
+        TwistCutterParameters(diameter_mm=20.0, height_mm=20.0, turns=3.5).validate()
+
+
+def test_twist_parameters_reject_blade_count_outside_bounds() -> None:
+    with pytest.raises(ValueError, match="blade_count"):
+        TwistCutterParameters(diameter_mm=20.0, height_mm=20.0, blade_count=0).validate()
+
+    with pytest.raises(ValueError, match="blade_count"):
+        TwistCutterParameters(diameter_mm=20.0, height_mm=20.0, blade_count=12).validate()
+
+
 def test_twist_parameter_normalization_clamps_printable_limits() -> None:
     params = TwistCutterParameters(
         diameter_mm=20.0,
         height_mm=20.0,
         core_hole_mm=3.0,
         slot_width_mm=0.3,
+        turns=0.0,
+        blade_count=0,
         segments=4,
     )
 
@@ -67,13 +89,23 @@ def test_twist_parameter_normalization_clamps_printable_limits() -> None:
 
     assert normalized.core_hole_mm == 6.0
     assert normalized.slot_width_mm == MIN_PRINTABLE_SLOT_WIDTH_MM
+    assert normalized.turns == MIN_TURNS
+    assert normalized.blade_count == MIN_BLADE_COUNT
     assert normalized.segments == MIN_SEGMENTS
 
 
-def test_twist_parameter_normalization_caps_large_core_hole() -> None:
-    params = TwistCutterParameters(diameter_mm=20.0, height_mm=20.0, core_hole_mm=19.5)
+def test_twist_parameter_normalization_caps_upper_bounds() -> None:
+    params = TwistCutterParameters(
+        diameter_mm=20.0,
+        height_mm=20.0,
+        core_hole_mm=19.5,
+        turns=8.0,
+        blade_count=99,
+    )
 
     normalized = normalize_twist_parameters(params)
 
     assert normalized.core_hole_mm == pytest.approx(18.4)
     assert normalized.core_hole_mm < normalized.diameter_mm
+    assert normalized.turns == MAX_TURNS
+    assert normalized.blade_count == MAX_BLADE_COUNT

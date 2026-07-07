@@ -13,6 +13,10 @@ MIN_CORE_HOLE_MM = 6.0
 MIN_SEGMENTS = 16
 DEFAULT_SEGMENTS = 96
 MAX_SEGMENTS = 192
+MIN_TURNS = 0.25
+MAX_TURNS = 3.0
+MIN_BLADE_COUNT = 1
+MAX_BLADE_COUNT = 8
 
 
 @dataclass(frozen=True)
@@ -30,14 +34,16 @@ class TwistCutterParameters:
         max_core_hole = max(0.0, diameter - (MIN_PRINTABLE_SLOT_WIDTH_MM * 2.0))
         core_hole = min(max(float(self.core_hole_mm), MIN_CORE_HOLE_MM), max_core_hole)
         slot_width = max(float(self.slot_width_mm), MIN_PRINTABLE_SLOT_WIDTH_MM)
+        turns = min(max(float(self.turns), MIN_TURNS), MAX_TURNS)
+        blade_count = min(max(int(self.blade_count), MIN_BLADE_COUNT), MAX_BLADE_COUNT)
         segments = min(max(int(self.segments), MIN_SEGMENTS), MAX_SEGMENTS)
         return TwistCutterParameters(
             diameter_mm=diameter,
             height_mm=float(self.height_mm),
             core_hole_mm=core_hole,
             slot_width_mm=slot_width,
-            turns=float(self.turns),
-            blade_count=int(self.blade_count),
+            turns=turns,
+            blade_count=blade_count,
             segments=segments,
         )
 
@@ -52,8 +58,10 @@ class TwistCutterParameters:
             raise ValueError("core_hole_mm must be smaller than diameter_mm")
         if self.slot_width_mm < MIN_PRINTABLE_SLOT_WIDTH_MM:
             raise ValueError(f"slot_width_mm must be at least {MIN_PRINTABLE_SLOT_WIDTH_MM:.1f} mm")
-        if self.blade_count < 1:
-            raise ValueError("blade_count must be at least 1")
+        if self.turns < MIN_TURNS or self.turns > MAX_TURNS:
+            raise ValueError(f"turns must be between {MIN_TURNS:.2f} and {MAX_TURNS:.2f}")
+        if self.blade_count < MIN_BLADE_COUNT or self.blade_count > MAX_BLADE_COUNT:
+            raise ValueError(f"blade_count must be between {MIN_BLADE_COUNT} and {MAX_BLADE_COUNT}")
         if self.segments < MIN_SEGMENTS:
             raise ValueError(f"segments must be at least {MIN_SEGMENTS}")
 
@@ -81,13 +89,7 @@ def generate_twist_cutter(params: TwistCutterParameters) -> trimesh.Trimesh:
             t = (segment_index + 0.5) / params.segments
             z = -params.height_mm / 2.0 + t * params.height_mm
             angle = base_angle + (2.0 * np.pi * params.turns * t)
-            box = trimesh.creation.box(
-                extents=(
-                    radial_length,
-                    params.slot_width_mm,
-                    segment_height * segment_overlap,
-                )
-            )
+            box = trimesh.creation.box(extents=(radial_length, params.slot_width_mm, segment_height * segment_overlap))
             transform = rotation_matrix(angle, (0, 0, 1)) @ translation_matrix((radial_center, 0, z))
             box.apply_transform(transform)
             meshes.append(box)
