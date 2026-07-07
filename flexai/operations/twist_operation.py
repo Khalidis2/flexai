@@ -10,6 +10,7 @@ from typing import Any
 from flexai.cutters.twist_generator import TwistCutterParameters, generate_twist_cutter
 from flexai.executor.blender_runner import BlenderRunResult
 from flexai.executor.boolean_executor import subtract_cutter_with_blender
+from flexai.importer.mesh_loader import load_mesh
 from flexai.models import CutterRecommendation
 
 
@@ -45,39 +46,51 @@ def apply_twist_operation(
     if recommendation.plugin_id != "twist":
         raise ValueError(f"Twist operation requires a twist recommendation, got: {recommendation.plugin_id}")
 
+    output_path = output_path.expanduser().resolve()
+    input_path = input_path.expanduser().resolve()
     params = twist_parameters_from_recommendation(recommendation)
     cutter_mesh = generate_twist_cutter(params)
-    output_path = output_path.expanduser().resolve()
 
+    with tempfile.TemporaryDirectory(prefix="flexai_twist_") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        target_path = _prepare_blender_target(input_path, tmpdir_path)
+        cutter_path = _export_cutter(cutter_mesh, output_path, keep_cutter, cutter_output_path, tmpdir_path)
+        blender_result = subtract_cutter_with_blender(
+            target_path=target_path,
+            cutter_path=cutter_path,
+            output_path=output_path,
+            blender_path=blender_path,
+        )
+        return TwistOperationResult(
+            input_path=target_path,
+            cutter_path=cutter_path,
+            output_path=output_path,
+            blender_result=blender_result,
+        )
+
+
+def _prepare_blender_target(input_path: Path, tmpdir_path: Path) -> Path:
+    if input_path.suffix.lower() in {".stl", ".obj"}:
+        return input_path
+
+    target_path = tmpdir_path / "target.stl"
+    asset = load_mesh(input_path)
+    asset.mesh.export(target_path)
+    return target_path
+
+
+def _export_cutter(
+    cutter_mesh,
+    output_path: Path,
+    keep_cutter: bool,
+    cutter_output_path: Path | None,
+    tmpdir_path: Path,
+) -> Path:
     if keep_cutter:
         cutter_path = (cutter_output_path or output_path.with_name(output_path.stem + "_cutter.stl")).expanduser().resolve()
         cutter_path.parent.mkdir(parents=True, exist_ok=True)
-        cutter_mesh.export(cutter_path)
-        blender_result = subtract_cutter_with_blender(
-            target_path=input_path.expanduser().resolve(),
-            cutter_path=cutter_path,
-            output_path=output_path,
-            blender_path=blender_path,
-        )
-        return TwistOperationResult(
-            input_path=input_path.expanduser().resolve(),
-            cutter_path=cutter_path,
-            output_path=output_path,
-            blender_result=blender_result,
-        )
+    else:
+        cutter_path = tmpdir_path / "twist_cutter.stl"
 
-    with tempfile.TemporaryDirectory(prefix="flexai_twist_") as tmpdir:
-        cutter_path = Path(tmpdir) / "twist_cutter.stl"
-        cutter_mesh.export(cutter_path)
-        blender_result = subtract_cutter_with_blender(
-            target_path=input_path.expanduser().resolve(),
-            cutter_path=cutter_path,
-            output_path=output_path,
-            blender_path=blender_path,
-        )
-        return TwistOperationResult(
-            input_path=input_path.expanduser().resolve(),
-            cutter_path=cutter_path,
-            output_path=output_path,
-            blender_result=blender_result,
-        )
+    cutter_mesh.export(cutter_path)
+    return cutter_path
