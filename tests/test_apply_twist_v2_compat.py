@@ -28,6 +28,8 @@ def test_apply_twist_v2_delegates_to_primary_twist_command(monkeypatch) -> None:
             "--strict-recommendation",
             "--report",
             "reports/operation.json",
+            "--artifacts-dir",
+            "artifacts",
         ],
     )
 
@@ -39,4 +41,5 @@ def test_apply_twist_v2_delegates_to_primary_twist_command(monkeypatch) -> None:
         "keep_cutter": True,
         "strict_recommendation": True,
         "report_path": "reports/operation.json",
+        "artifacts_dir": "artifacts",
     }

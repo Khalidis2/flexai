@@ -16,6 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--blender", default=None, help="Optional explicit Blender executable path")
     parser.add_argument("--keep-cutter", action="store_true", help="Keep generated cutter STL beside output")
     parser.add_argument("--report", default=None, help="Optional path to write the JSON operation report")
+    parser.add_argument("--artifacts-dir", default=None, help="Optional directory for default Twist artifacts")
     parser.add_argument(
         "--strict-recommendation",
         action="store_true",
@@ -33,6 +34,7 @@ def main() -> int:
         keep_cutter=args.keep_cutter,
         strict_recommendation=args.strict_recommendation,
         report_path=args.report,
+        artifacts_dir=args.artifacts_dir,
     )
 
 

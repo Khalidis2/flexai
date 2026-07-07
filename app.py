@@ -21,7 +21,7 @@ from flexai.plugins.registry import load_plugins
 console = Console()
 
 
-def analyze_command(path: str, report_path: str | None = None) -> int:
+def analyze_command(path: str, report_path: str | None = None, artifacts_dir: str | None = None) -> int:
     model_path = Path(path).expanduser().resolve()
     mesh = load_mesh(model_path)
     report = analyze_model(mesh, model_path)
@@ -33,8 +33,9 @@ def analyze_command(path: str, report_path: str | None = None) -> int:
         "recommendation": recommendation.to_dict(),
     }
 
-    if report_path:
-        _write_json_report(Path(report_path), payload)
+    resolved_report_path = _resolve_report_path(report_path, artifacts_dir, "analysis.json")
+    if resolved_report_path:
+        _write_json_report(resolved_report_path, payload)
 
     table = _analysis_table(model_path, report, recommendation)
     console.print(table)
@@ -49,6 +50,7 @@ def twist_command(
     keep_cutter: bool,
     strict_recommendation: bool,
     report_path: str | None = None,
+    artifacts_dir: str | None = None,
 ) -> int:
     model_path = Path(input_path).expanduser().resolve()
     output_model_path = Path(output_path).expanduser().resolve()
@@ -84,12 +86,21 @@ def twist_command(
         "operation": _twist_result_to_dict(result),
     }
 
-    if report_path:
-        _write_json_report(Path(report_path), payload)
+    resolved_report_path = _resolve_report_path(report_path, artifacts_dir, "twist_operation.json")
+    if resolved_report_path:
+        _write_json_report(resolved_report_path, payload)
 
     console.print(_twist_table(model_path, output_model_path, result))
     console.print_json(json.dumps(payload, indent=2))
     return 0 if result.passed else 2
+
+
+def _resolve_report_path(report_path: str | None, artifacts_dir: str | None, default_name: str) -> Path | None:
+    if report_path:
+        return Path(report_path)
+    if artifacts_dir:
+        return Path(artifacts_dir) / default_name
+    return None
 
 
 def _write_json_report(path: Path, payload: dict[str, Any]) -> Path:
@@ -176,6 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
     analyze_parser = subparsers.add_parser("analyze", help="Analyze an STL, OBJ, or 3MF file")
     analyze_parser.add_argument("path", help="Path to model file")
     analyze_parser.add_argument("--report", default=None, help="Optional path to write the JSON analysis report")
+    analyze_parser.add_argument("--artifacts-dir", default=None, help="Optional directory for default analysis artifacts")
 
     twist_parser = subparsers.add_parser("twist", help="Apply the Twist cutter and validate the output STL")
     twist_parser.add_argument("input", help="Input STL, OBJ, or 3MF path")
@@ -183,6 +195,7 @@ def build_parser() -> argparse.ArgumentParser:
     twist_parser.add_argument("--blender", default=None, help="Optional explicit Blender executable path")
     twist_parser.add_argument("--keep-cutter", action="store_true", help="Keep generated cutter STL beside output")
     twist_parser.add_argument("--report", default=None, help="Optional path to write the JSON operation report")
+    twist_parser.add_argument("--artifacts-dir", default=None, help="Optional directory for default Twist artifacts")
     twist_parser.add_argument(
         "--strict-recommendation",
         action="store_true",
@@ -195,7 +208,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     if args.command == "analyze":
-        return analyze_command(args.path, report_path=args.report)
+        return analyze_command(args.path, report_path=args.report, artifacts_dir=args.artifacts_dir)
     if args.command == "twist":
         return twist_command(
             input_path=args.input,
@@ -204,6 +217,7 @@ def main() -> int:
             keep_cutter=args.keep_cutter,
             strict_recommendation=args.strict_recommendation,
             report_path=args.report,
+            artifacts_dir=args.artifacts_dir,
         )
 
     parser.print_help()
