@@ -53,3 +53,50 @@ def test_scored_twist_operation_returns_quality_score(monkeypatch, tmp_path) -> 
     assert result.score.passed is True
     assert result.score.grade == "excellent"
     assert result.score.score >= 90.0
+
+
+def test_scored_twist_operation_forwards_cutter_output_path(monkeypatch, tmp_path) -> None:
+    input_path = tmp_path / "input.stl"
+    output_path = tmp_path / "output.stl"
+    cutter_output_path = tmp_path / "artifacts" / "twist_cutter.stl"
+    captured: dict[str, object] = {}
+    trimesh.creation.box(extents=(10.0, 10.0, 10.0)).export(input_path)
+
+    def fake_apply_twist_operation(**kwargs):
+        captured.update(kwargs)
+        trimesh.creation.box(extents=(9.0, 9.0, 9.0)).export(output_path)
+        from flexai.operations.twist_operation import TwistOperationResult
+
+        return TwistOperationResult(
+            input_path=Path(kwargs["input_path"]),
+            cutter_path=Path(kwargs["cutter_output_path"]),
+            output_path=Path(kwargs["output_path"]),
+            blender_result=BlenderRunResult(
+                return_code=0,
+                stdout="",
+                stderr="",
+                output_path=Path(kwargs["output_path"]),
+            ),
+        )
+
+    monkeypatch.setattr(compared_twist_operation, "apply_twist_operation", fake_apply_twist_operation)
+
+    recommendation = CutterRecommendation(
+        plugin_id="twist",
+        plugin_name="Twist",
+        score=96.0,
+        reason="Test recommendation",
+        parameters={"diameter_mm": 12.0, "height_mm": 12.0},
+    )
+
+    result = apply_scored_twist_operation(
+        input_path=input_path,
+        output_path=output_path,
+        recommendation=recommendation,
+        keep_cutter=True,
+        cutter_output_path=cutter_output_path,
+    )
+
+    assert captured["keep_cutter"] is True
+    assert captured["cutter_output_path"] == cutter_output_path
+    assert result.compared_result.operation.cutter_path == cutter_output_path

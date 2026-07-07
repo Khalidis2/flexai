@@ -35,5 +35,9 @@ def test_resolve_artifact_path_uses_artifacts_dir_default_name() -> None:
     assert _resolve_artifact_path("artifacts", "twist_cutter.stl") == Path("artifacts") / "twist_cutter.stl"
 
 
+def test_resolve_artifact_path_uses_twist_cutter_default_name() -> None:
+    assert _resolve_artifact_path("run_artifacts", "twist_cutter.stl") == Path("run_artifacts") / "twist_cutter.stl"
+
+
 def test_resolve_artifact_path_returns_none_without_artifacts_dir() -> None:
     assert _resolve_artifact_path(None, "twist_cutter.stl") is None
