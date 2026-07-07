@@ -9,12 +9,13 @@ V1 should not try to support every cutter or every model type.
 Recommended V1 goal:
 
 ```text
-Upload STL/OBJ
+Upload STL/OBJ/3MF
 Analyze model
 Recommend cutter
 Apply Twist cutter
 Validate output
 Export STL
+Write JSON report
 ```
 
 Reason:
@@ -38,14 +39,14 @@ Recommended improvements:
 
 Before building a polished desktop app, add a simple preview/export workflow.
 
-Suggested path:
+Current implemented path:
 
 ```text
-CLI generates:
-  model_report.json
-  cutter.stl
+CLI can generate:
+  analysis.json
+  cutter.stl when --keep-cutter is used
   output.stl
-  validation_report.json
+  twist_operation.json
 ```
 
 Then the user can inspect files in Blender, Bambu Studio, or PrusaSlicer.
@@ -94,7 +95,22 @@ Each protected feature should produce a region with:
 
 After every operation, FlexAI should score the result.
 
-Suggested score components:
+Current operation reports include:
+
+```json
+{
+  "operation": {
+    "passed": true,
+    "score": {
+      "score": 87,
+      "grade": "good",
+      "warnings": []
+    }
+  }
+}
+```
+
+Score components should continue to account for:
 
 - output loads successfully
 - output is watertight
@@ -102,16 +118,6 @@ Suggested score components:
 - no tiny floating shells
 - volume change is within expected range
 - cutter changed the intended region
-
-The operation should return:
-
-```json
-{
-  "passed": true,
-  "score": 87,
-  "warnings": []
-}
-```
 
 ## 7. Keep Blender as an executor, not the brain
 
@@ -128,17 +134,18 @@ Validation checks the result
 
 This keeps the project maintainable.
 
-## 8. Add 3MF execution later
+## 8. Keep 3MF execution internal and STL-first
 
-3MF analysis currently works through trimesh, but Blender boolean execution is wired for STL/OBJ.
+3MF analysis works through trimesh. Blender boolean execution remains STL/OBJ oriented, so FlexAI should continue converting 3MF inputs to temporary STL internally for execution.
 
 Recommended path:
 
-1. Keep STL as the main execution format for now.
+1. Keep STL as the main execution output format for now.
 2. Convert 3MF input to temporary STL internally.
-3. Run boolean on STL.
-4. Export STL first.
-5. Add 3MF export later only if needed.
+3. Preserve the original 3MF input path in reports.
+4. Run boolean on STL.
+5. Export STL first.
+6. Add 3MF export later only if needed.
 
 ## 9. Avoid GUI too early
 
@@ -183,18 +190,19 @@ Example manifest fields:
 
 FlexAI should know the practical limits of common FDM printing.
 
-Recommended default profile:
+Current/default profile direction:
 
 ```text
 Nozzle: 0.4 mm
 Minimum slot width: 0.8 mm
 Minimum wall: 0.8 mm
+Minimum core hole: 6.0 mm
 Minimum embossed detail: 0.6 mm
 Recommended layer height: 0.16-0.20 mm
 Material: PLA/PETG
 ```
 
-These values should influence cutter spacing and validation.
+These values should continue to influence cutter spacing and validation.
 
 ## 12. Suggested near-term roadmap
 
@@ -212,11 +220,11 @@ These values should influence cutter spacing and validation.
 - validate generated cutter mesh
 - test on sphere and cylinder fixtures
 
-### Milestone C: Add operation scoring
+### Milestone C: Improve operation scoring
 
-- combine output validation and input/output comparison
-- return a single operation score
-- fail safely when volume removed is unreasonable
+- tune pass/fail thresholds on benchmark models
+- detect unreasonable volume removal more accurately
+- include clearer user-facing warnings
 
 ### Milestone D: Add simple preview workflow
 

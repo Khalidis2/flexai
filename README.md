@@ -18,6 +18,7 @@ Current Twist workflow:
 - Validate the output mesh
 - Score the operation and report warnings
 - Optionally export the cutter STL for inspection
+- Optionally write JSON analysis and operation reports to disk
 
 V1 cutter plugins:
 
@@ -54,10 +55,16 @@ pip install -r requirements.txt
 python app.py analyze path/to/model.stl
 ```
 
+Write the JSON analysis report to disk:
+
+```bash
+python app.py analyze path/to/model.stl --report reports/analysis.json
+```
+
 For a 3MF test file, copy it into the repo and run:
 
 ```bash
-python app.py analyze path/to/model.3mf
+python app.py analyze path/to/model.3mf --report reports/analysis_3mf.json
 ```
 
 ## Apply Twist cutter
@@ -68,10 +75,16 @@ Use the main CLI workflow:
 python app.py twist path/to/model.stl path/to/output.stl --keep-cutter
 ```
 
+Write the full operation report to disk:
+
+```bash
+python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --report reports/twist_operation.json
+```
+
 For 3MF inputs, FlexAI keeps the original input path in reports and creates a temporary STL only for Blender execution:
 
 ```bash
-python app.py twist path/to/model.3mf path/to/output.stl --keep-cutter
+python app.py twist path/to/model.3mf path/to/output.stl --keep-cutter --report reports/twist_3mf_operation.json
 ```
 
 If Blender is not on PATH, pass the executable explicitly:
@@ -94,6 +107,15 @@ Use strict recommendation mode when you want the command to fail unless the plan
 python app.py twist path/to/model.stl path/to/output.stl --strict-recommendation
 ```
 
+## Suggested smoke run
+
+```bash
+python app.py analyze path/to/model.stl --report reports/analysis.json
+python app.py twist path/to/model.stl path/to/output.stl --keep-cutter --report reports/twist_operation.json
+```
+
+Inspect the generated STL and JSON artifacts before using the output for printing.
+
 ## Project status
 
-The first end-to-end Twist workflow is being integrated into the primary CLI. Blender execution still exports STL output first; 3MF export can be added later if needed.
+The first end-to-end Twist workflow is being integrated into the primary CLI. Blender execution exports STL output first; 3MF export can be added later if needed.
