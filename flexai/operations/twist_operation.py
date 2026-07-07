@@ -20,6 +20,7 @@ class TwistOperationResult:
     cutter_path: Path
     output_path: Path
     blender_result: BlenderRunResult
+    blender_input_path: Path | None = None
 
 
 def twist_parameters_from_recommendation(recommendation: CutterRecommendation) -> TwistCutterParameters:
@@ -53,19 +54,20 @@ def apply_twist_operation(
 
     with tempfile.TemporaryDirectory(prefix="flexai_twist_") as tmpdir:
         tmpdir_path = Path(tmpdir)
-        target_path = _prepare_blender_target(input_path, tmpdir_path)
+        blender_input_path = _prepare_blender_target(input_path, tmpdir_path)
         cutter_path = _export_cutter(cutter_mesh, output_path, keep_cutter, cutter_output_path, tmpdir_path)
         blender_result = subtract_cutter_with_blender(
-            target_path=target_path,
+            target_path=blender_input_path,
             cutter_path=cutter_path,
             output_path=output_path,
             blender_path=blender_path,
         )
         return TwistOperationResult(
-            input_path=target_path,
+            input_path=input_path,
             cutter_path=cutter_path,
             output_path=output_path,
             blender_result=blender_result,
+            blender_input_path=blender_input_path,
         )
 
 

@@ -110,6 +110,8 @@ def _twist_table(input_path: Path, output_path: Path, result: ScoredTwistOperati
     table.add_row("Input", str(input_path))
     table.add_row("Output", str(output_path))
     table.add_row("Cutter", str(operation.cutter_path))
+    if operation.blender_input_path and operation.blender_input_path != operation.input_path:
+        table.add_row("Blender Input", str(operation.blender_input_path))
     table.add_row("Blender Return Code", str(operation.blender_result.return_code))
     table.add_row("Watertight", str(comparison.output_report.watertight))
     table.add_row("Removed Volume", f"{comparison.volume_removed_percent:.2f}%")
@@ -141,6 +143,7 @@ def _twist_result_to_dict(result: ScoredTwistOperationResult) -> dict[str, objec
         "score": result.score.to_dict(),
         "comparison": result.compared_result.comparison.to_dict(),
         "input_path": str(operation.input_path),
+        "blender_input_path": str(operation.blender_input_path) if operation.blender_input_path else None,
         "cutter_path": str(operation.cutter_path),
         "output_path": str(operation.output_path),
         "blender": {
